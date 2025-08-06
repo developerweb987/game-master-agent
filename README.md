@@ -23,10 +23,3 @@ Game Master Agent is a text-based fantasy adventure game powered by multiple AI 
   - Dice Roller (`roll_dice()`)
   - Event Generator (`generate_event()`)
 
-## 🚀 How to Run
-
-1. Clone this repository.
-2. Create a `.env` file and add your Gemini API key:
-   ```env
-   GEMINI_API_KEY=your_api_key_here
-
