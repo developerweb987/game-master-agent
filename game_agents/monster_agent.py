@@ -1,9 +1,9 @@
 from agents import Agent
-from tools.dice import roll_dice
+from tools.game_tools import roll_dice, damage_roll, monster_hp
 
-class MonsterAgent(Agent):
-    def __init__(self, model):
-        super().__init__(
-            name="MonsterAgent",
-            instructions="You handle battles with monsters when triggered in the game."
-        )
+monster_agent = Agent(
+    name="MonsterAgent",
+    instructions="Handle combat. Use roll_dice() for hits and damage_roll() for damage.",
+    model=None,
+    handoffs=[]
+)
