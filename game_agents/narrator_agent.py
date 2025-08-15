@@ -1,8 +1,9 @@
 from agents import Agent
+from tools.game_tools import generate_event
 
-class NarratorAgent(Agent):
-    def __init__(self, model):
-        super().__init__(
-            name="NarratorAgent",
-            instructions="You narrate the story and describe the adventure for the player."
-        )
+narrator_agent = Agent(
+    name="NarratorAgent",
+    instructions="Keep the story short. Call generate_event() when user explores.",
+    model=None,
+    handoffs=[]
+)
