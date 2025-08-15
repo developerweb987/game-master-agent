@@ -1,71 +1,69 @@
 import os
 import asyncio
 from dotenv import load_dotenv
-from game_agents.narrator_agent import NarratorAgent
-from game_agents.monster_agent import MonsterAgent
-from game_agents.item_agent import ItemAgent
+
+from game_agents.narrator_agent import narrator_agent
+from game_agents.monster_agent import monster_agent
+from game_agents.item_agent import item_agent
+
 from agents import Agent, Runner, AsyncOpenAI, OpenAIChatCompletionsModel
 from agents.run import RunConfig
 
 load_dotenv()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    raise ValueError("GEMINI_API_KEY missing in .env")
 
-gemini_api_key = os.getenv("GEMINI_API_KEY")
-base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
-
-if not gemini_api_key:
-    raise ValueError("GEMINI_API_KEY is not set in .env")
-
-external_client = AsyncOpenAI(
-    api_key=gemini_api_key,
-    base_url=base_url
+client = AsyncOpenAI(
+    api_key=GEMINI_API_KEY,
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
 )
 
 model = OpenAIChatCompletionsModel(
     model="gemini-2.0-flash",
-    openai_client=external_client
+    openai_client=client
 )
 
 config = RunConfig(
     model=model,
-    model_provider=external_client,
+    model_provider=client,
     tracing_disabled=True
 )
 
-narrator_agent = NarratorAgent(model)
-monster_agent = MonsterAgent(model)
-item_agent = ItemAgent(model)
+narrator_agent.model = model
+monster_agent.model = model
+item_agent.model = model
+
+narrator_agent.handoffs = [monster_agent, item_agent]
+monster_agent.handoffs = [item_agent]
+item_agent.handoffs = [narrator_agent]
 
 async def game_loop():
-    agent = Agent(
+    gm = Agent(
         name="GameMasterAgent",
-        instructions=(
-            "You run a text-based fantasy adventure game. "
-            "Hand off to MonsterAgent for battles and ItemAgent for rewards. "
-            "NarratorAgent narrates the story. Only respond with story and actions."
-        ),
+        instructions="Run a simple text adventure using subagents.",
+        model=model,
         handoffs=[narrator_agent, monster_agent, item_agent]
     )
 
-    chat_history = []
-
-    print("Welcome to Game Master Agent! Your adventure begins now.\n")
+    print("\n Game master agent — type commands: explore, attack, defend, run, inventory, quit\n")
+    history = []
 
     while True:
-        user_input = input("Your action: ").strip()
-        if user_input.lower() in ["quit", "exit"]:
-            print("Exiting the adventure. Goodbye!")
+        cmd = input("Action: ").strip()
+        if cmd.lower() in ("quit", "exit"):
+            print(" Goodbye")
             break
 
-        chat_history.append({"role": "user", "content": user_input})
+        history.append({"role": "user", "content": cmd})
 
         try:
-            result = await Runner.run(agent, chat_history, run_config=config)
-            response = result.final_output
-            print(f"\n{response}\n")
-            chat_history.append({"role": "developer", "content": response})
+            result = await Runner.run(gm, history, run_config=config)
+            response = getattr(result, "final_output", str(result))
+            print("\n", response, "\n")
+            history.append({"role": "assistant", "content": response})
         except Exception as e:
-            print(f"Error: {str(e)}\n")
-
+            print(" Error:", e)
 
 if __name__ == "__main__":
     asyncio.run(game_loop())
