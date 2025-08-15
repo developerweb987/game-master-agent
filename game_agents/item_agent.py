@@ -1,9 +1,9 @@
 from agents import Agent
-from tools.events import generate_event
+from tools.game_tools import generate_event
 
-class ItemAgent(Agent):
-    def __init__(self, model):
-        super().__init__(
-            name="ItemAgent",
-            instructions="You provide items, rewards, or inventory management in the game."
-        )
+item_agent = Agent(
+    name="ItemAgent",
+    instructions="Give rewards or items after events or combat.",
+    model=None,
+    handoffs=[]
+)
